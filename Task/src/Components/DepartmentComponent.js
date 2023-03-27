@@ -8,14 +8,65 @@ import {
 } from '../Redux/Actions/Actions'
 import { connect } from 'react-redux'
 import { Link } from 'react-router-dom';
+import { Formik, useFormik } from "formik";
+import * as Yup from "yup";
+import DataTable from './DataTable';
+import Modal from 'react-modal';
+
 
 function DepartmentComponent({
     getAllDepartmentReducer, addNewDepartmentProps, updateDepartmentProps, RemoveDepartmentProps,
-    getAllDepartmentAction, getDepartmentByIdAction, addNewDepartmentAction, updateDepartmentDetailsAction, removeDepartmentAction, }) {
+    getAllDepartmentAction, addNewDepartmentAction, updateDepartmentDetailsAction, removeDepartmentAction, }) {
 
-    const [filteredDepartmentList, setFilteredDepartmentList] = useState(getAllDepartmentReducer);
-    const [formData, setFormData] = useState(null);
-    const [showError, setShowError] = useState(null);
+    const customStyles = {
+        content: {
+            top: '50%',
+            left: '50%',
+            right: 'auto',
+            bottom: 'auto',
+            marginRight: '-50%',
+            transform: 'translate(-50%, -50%)',
+            width: '25%',
+        },
+    };
+
+    const [tableData, setTableData] = useState([])
+    const [modalIsOpen, setIsOpen] = React.useState(false);
+
+    const TableColumns = [
+        { Header: 'id', accessor: 'id', },
+        { Header: 'Department', accessor: 'department', },
+        { Header: 'Details', accessor: 'details', },
+        { Header: 'Action', accessor: 'aciton', },
+    ];
+
+    const formik = useFormik({
+        initialValues: {
+            department: '',
+            details: ''
+        },
+        validationSchema: Yup.object().shape({
+            department: Yup.string().required("Please enter department"),
+            details: Yup.string().required("Please enter department details")
+        }),
+
+        onSubmit: (values, { resetForm }) => {
+            if (values.id) {
+                updateDepartmentDetailsAction(values.id, values)
+            }
+            else {
+                let maxid = 0
+                getAllDepartmentReducer.forEach(record => {
+                    if (maxid < record.id) {
+                        maxid = record.id
+                    }
+                })
+                addNewDepartmentAction({ 'id': maxid + 1, 'department': values.department, 'details': values.details })
+            }
+            setIsOpen(false);
+            resetForm();
+        }
+    });
 
     useEffect(() => {
         getAllDepartmentAction()
@@ -23,138 +74,143 @@ function DepartmentComponent({
 
     useEffect(() => {
         if (getAllDepartmentReducer) {
-            setFilteredDepartmentList(getAllDepartmentReducer)
+            setTableData(getAllDepartmentReducer.map(record => {
+                return {
+                    id: record.id,
+                    department: record.department,
+                    details: record.details,
+                    aciton: <div className='btn-group'>
+                        <button type="button" className="btn btn-primary btn-sm" onClick={() => onUpdateDepartment(record)}>Edit</button>
+                        <button type="button" className="btn btn-danger btn-sm" onClick={() => onRemoveDepartment(record)}>Remove</button>
+                    </div>
+                }
+            }))
         }
     }, [getAllDepartmentReducer,])
 
-    const onInputChange = (event) => {
-        setFormData({ ...formData, [event.target.name]: event.target.value })
-        setShowError(null)
-    }
-
-    const saveDepartment = () => {
-        if (formData?.department?.length > 0 && formData?.departmentDetails?.length > 0) {
-            addNewDepartmentAction({ 'department': formData.department, 'departmentDetails': formData.departmentDetails })
-            setShowError(null)
-            setFormData(null)
-        }
-        else {
-            setShowError("Enter Valid Details.");
-        }
-    }
 
     const onSearchFilter = (event) => {
-        setFilteredDepartmentList(getAllDepartmentReducer.filter(department => department.department.toLowerCase().includes(event.target.value) || department.departmentDetails.toLowerCase().includes(event.target.value)))
+        let tempList = []
+        getAllDepartmentReducer.forEach(record => {
+            if (record.department.toLowerCase().includes(event.target.value) || record.details.toLowerCase().includes(event.target.value)) {
+                tempList.push({
+                    id: record.id,
+                    department: record.department,
+                    details: record.details,
+                    aciton: <div className='btn-group'>
+                        <button type="button" className="btn btn-primary btn-sm" onClick={() => onUpdateDepartment(record)}>Edit</button>
+                        <button type="button" className="btn btn-danger btn-sm" onClick={() => onRemoveDepartment(record)}>Remove</button>
+                    </div>
+                })
+            }
+        })
+        setTableData(tempList);
     }
 
-    const onUpdateDepartment = () => {
-        if (formData?.department?.length > 0 && formData?.departmentDetails?.length > 0) {
-            
-            updateDepartmentDetailsAction(formData.index, { 'department': formData.department, 'departmentDetails': formData.departmentDetails })
-            setShowError(null)
-            setFormData(null)
-        }
-        else {
-            setShowError("Enter Valid Details.");
-        }
+    const onUpdateDepartment = (data) => {
+        formik.setValues(data);
+        setIsOpen(true)
     }
 
     const onRemoveDepartment = (id) => {
-
         removeDepartmentAction(id)
     }
 
-    console.log(formData)
 
 
+    console.log(formik.values)
 
 
-    return <>
-        <div className='btn-group w-100 my-3' >
-            <Link to={'/'} className='btn btn-primary  ' >Employee
-            </Link>
+    return <div className='container' >
+        <div className='card my-3 shadow'>
+            <div className='card-header'>
+                <div className='btn-group w-100 ' >
+                    <Link to={'/'} className='btn btn-primary  ' >Employee</Link>
+                    <Link to={'/department'} className='btn btn-primary  '>Department</Link>
+                </div>
+            </div>
+            <div className='card-body'>
+                <div className='d-flex justify-content-between'>
+                    <h2 className="content-header-title float-start mb-0">Department List</h2>
+                    <div className='d-flex'>
+                        <input type='text' className='form-control-sm m-2' placeholder='Search' onChange={onSearchFilter} />
+                        <button className='btn btn-primary btn-sm m-2' onClick={() => setIsOpen(true)}>Add Department </button>
+                    </div>
+                </div>
+                <DataTable columns={TableColumns} tableData={tableData} />
+            </div >
+            <div>
+                <Modal
+                    isOpen={modalIsOpen}
+                    // onAfterOpen={afterOpenModal}
+                    // onRequestClose={closeModal}
+                    style={customStyles}
+                    contentLabel="Example Modal"
+                >
+                    <div className='modal-header'>
+                        <h2 >Add Department</h2>
+                        <button className='btn btn-danger  btn-sm' onClick={() => { setIsOpen(false) }}> X</button>
+                    </div>
 
-            <Link to={'/department'} className='btn btn-primary  '>Department
-            </Link>
+                    <Formik
+                        initialValues={formik.initialValues}
+                        enableReinitialize={true}
+                        validateOnChange={false}
+                        validateOnBlur={false}
+                        onSubmit={values => formik.handleSubmit(values)}>
 
-        </div>
-        <div className='container ' >
-            <div className='d-flex justify-content-between'>
+                        {props => (
 
-                <h2 className="content-header-title float-start mb-0">Department List</h2>
-                <div className='d-flex'>
-                    <input type='text' className='form-control-sm m-2' placeholder='Search' onChange={onSearchFilter} />
+                            <form onSubmit={props.handleSubmit}>
+                                <div >
+                                    <div >
+                                        <div class="form-group ">
+                                            <label className=''>Department</label>
+                                            <input className=''
+                                                id="department"
+                                                name="department"
+                                                type="text"
+                                                class="form-control"
+                                                onChange={formik.handleChange}
+                                                onBlur={formik.handleBlur}
+                                                value={formik.values.department}
+                                            />
+                                            {formik.touched.department && formik.errors.department ? (
+                                                <span className="text-danger">{formik.errors.department}</span>
+                                            ) : null}
+                                        </div>
 
-                    <button className='btn btn-primary btn-sm m-2' onClick={() => setFormData({
+                                        <div class="form-group ">
+                                            <label className=''>Details</label>
+                                            <input className=''
+                                                id="details"
+                                                name="details"
+                                                type="text"
+                                                class="form-control"
+                                                onChange={formik.handleChange}
+                                                onBlur={formik.handleBlur}
+                                                value={formik.values.details}
+                                            />
+                                            {formik.touched.details && formik.errors.details ? (
+                                                <span className="text-danger">{formik.errors.details}</span>) : null}
+                                        </div>
 
-                    })}>Add Department </button>
-                </div>   </div>
-            {showError &&
-                <div className='bg-danger-subtle p-2'>
-                    {showError}</div>}
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">
-                            Department
-                        </th>
-                        <th scope="col">
-                            Details
-                        </th>
-                        <th scope="col">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {formData &&
-                        <tr>
-                            <th>#</th>
-                            <td>
-                                <input type='text' className={'form-control-sm ' + (showError ? 'border-danger' : '')} name="department" value={formData?.department} onChange={onInputChange} /></td>
-                            <td>
-                                <input type='text' className={'form-control-sm ' + (showError ? 'border-danger' : '')} name="departmentDetails" value={formData?.departmentDetails} onChange={onInputChange} /></td>
-                            <td >
-                                <div className='btn-group btn-group-sm'>
-                                    {formData?.index ?
-                                        <button className='btn btn-primary' onClick={onUpdateDepartment}>Update </button >
-                                        :
-                                        <button className='btn btn-primary' onClick={saveDepartment}>Save </button >
-                                    }
-                                    <button className='btn btn-danger' onClick={() => {
-                                        setFormData(null)
-                                        setShowError(null)
-                                    }}>Cancle </button >
+                                        <div className='d-flex btn-group mt-3'>
+                                            {formik.values.details?.id ?
+                                                <button className='btn btn-primary btn-sm' onClick={() => { }}>Update </button >
+                                                : <button type='submit' className='btn btn-primary btn-sm' >Save </button >}
+                                            <button className='btn btn-danger btn-sm' onClick={() => { setIsOpen(false) }}>Cancle</button >
+                                        </div>
+                                    </div>
                                 </div>
-                            </td>
-                        </tr>
-                    }
-                    {filteredDepartmentList?.length ? filteredDepartmentList.map((department, index) => <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>{department.department}</td>
-                        <td>{department.departmentDetails}</td>
+                            </form>
+                        )}
 
-                        <td >
-                            <div className='btn-group btn-group-sm'>
-                                <button className='btn btn-primary' onClick={() => setFormData({ ...department, 'index': String(index) })}>Change </button >
-                                <button className='btn btn-danger' onClick={() => { onRemoveDepartment(index) }
-
-                                }>Rmove </button >
-                            </div>
-                        </td>
-                    </tr>
-                    )
-                        :
-                        <tr>
-                            <td colSpan={4} className="text-center">No Data Found</td>
-                        </tr>
-
-                    }
-
-                </tbody>
-            </table>
-        </div >
-    </>
-
+                    </Formik>
+                </Modal>
+            </div>
+        </div>
+    </div >
 }
 
 const mapStatetoProps = (state) => {

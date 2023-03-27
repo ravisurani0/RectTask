@@ -1,29 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react'
-import {
-    getAllDepartment,
-    getEmployeeById,
-    addNewEmployee,
-    updateEmployeeDetails,
-    removeEmployee,
-} from '../Redux/Actions/Actions'
+import { getAllDepartment, getEmployeeById, addNewEmployee, updateEmployeeDetails, } from '../Redux/Actions/Actions'
 import { connect } from 'react-redux'
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Formik, useFormik } from "formik";
+import * as Yup from "yup";
+
 
 function EmployeeDetailsComponent({
     getAllDepartmentReducer,
-    addNewEmployeeProps, getEmployeeDetailsProps,
-    updateEmployeeProps,
+    getEmployeeDetailsProps,
 
     getAllDepartmentAction,
     getEmployeeByIdAction,
     addNewEmployeeAction,
     updateEmployeeDetailsAction
 }) {
+
     let { id } = useParams();
 
-    const [formData, setFormData] = useState(null);
-    const [showError, setShowError] = useState(null);
     const navigate = useNavigate();
+
 
     useEffect(() => {
         if (id) {
@@ -35,126 +31,177 @@ function EmployeeDetailsComponent({
 
     useEffect(() => {
         if (getEmployeeDetailsProps) {
-            setFormData(getEmployeeDetailsProps)
+            formik.setValues(getEmployeeDetailsProps);
         }
     }, [getEmployeeDetailsProps])
 
-    const onInputChange = (event) => {
-        setFormData({ ...formData, [event.target.name]: event.target.value })
-        setShowError(null)
-    }
 
 
-    const onFormSave = () => {
-        let isError = false;
-        let errorList = {};
+    const formik = useFormik({
+        initialValues: {
+            firstName: '',
+            lastName: '',
+            dob: '',
+            salary: '',
+            department: '',
+        },
+        validationSchema: Yup.object().shape({
+            firstName: Yup.string().required("Please enter First Name."),
+            lastName: Yup.string().required("Please enter Last Name."),
+            dob: Yup.date().required("Please enter Date Of Birth.").max(new Date().toLocaleDateString()),
+            salary: Yup.number().required("Please enter Salary.").min(0, "Must be more than 5"),
+            department: Yup.string().required("Please enter Department."),
+        }),
 
-        if (!formData?.firstName) {
-            errorList = { ...errorList, 'firstName': 'Enter First Name.' };
-            isError = true;
-        }
-        if (!formData?.lastName) {
-            errorList = { ...errorList, 'lastName': 'Enter Last Name.' };
-            isError = true;
-        }
-        if (!formData?.dob) {
-            errorList = { ...errorList, 'dob': 'Enter Date of Birth.' };
-            isError = true;
-        }
-        if (!formData?.salary) {
-            errorList = { ...errorList, 'salary': 'Enter Salary.' };
-            isError = true;
-        }
-        if (!formData?.department) {
-            errorList = { ...errorList, 'department': 'Select Department.' };
-            isError = true;
-        }
-        if (!isError) {
-            if (id) {
-                updateEmployeeDetailsAction(id, formData)
-            } else {
-                addNewEmployeeAction(formData)
+        onSubmit: (values, { resetForm }) => {
+            if (values.id) {
+                updateEmployeeDetailsAction(values.id, values)
             }
-            setFormData(null)
-
+            else {
+                addNewEmployeeAction(values)
+            }
+            resetForm();
             navigate("/");
         }
-        else {
-            setShowError(errorList);
+    });
 
-        }
-    }
+    console.log(formik.values)
 
-    console.log(formData)
+
     return <div className='container' >
-        <div className='btn-group w-100 my-3' >
-            <Link to={'/'} className='btn btn-primary  ' >Employee
-            </Link>
 
-            <Link to={'/department'} className='btn btn-primary  '>Department
-            </Link>
+        <div className='card my-3 shadow'>
+            <div className='card-header'>
 
-        </div>
+                <div className='btn-group w-100 ' >
+                    <Link to={'/'} className='btn btn-primary  ' >Employee
+                    </Link>
 
-        <div className='d-flex justify-content-between'>
+                    <Link to={'/department'} className='btn btn-primary  '>Department
+                    </Link>
 
-            <h2 className="content-header-title float-start mb-0">Employee Details</h2>
-            <div className='d-flex'>
-                {id ?
-                    <button className='btn btn-primary btn-sm m-2 ' onClick={onFormSave}> Update</button>
-                    :
-                    <button className='btn btn-primary btn-sm m-2 ' onClick={onFormSave}> Save</button>}
-                <Link to={'/'} className='btn btn-danger btn-sm  m-2 '>Back</Link>
-            </div>   </div>
-
-
-        <div>
-
-            <div className='d-flex'>
-                <div class="form-group w-50 m-2">
-                    <label for="exampleFormControlInput1">First Name </label>
-                    <input type="text" class={"form-control " + (showError?.firstName && "border-danger")} name='firstName' value={formData?.firstName} placeholder="First Name " onChange={onInputChange} />
-                    {showError?.firstName &&
-                        <span className='text-danger'> {showError?.firstName}</span>
-                    }
                 </div>
-                <div class="form-group  w-50 m-2">
-                    <label for="exampleFormControlInput1">Last Name </label>
-                    <input type="text" class={"form-control " + (showError?.lastName && "border-danger")} name='lastName' value={formData?.lastName} placeholder="Last Name " onChange={onInputChange} />
-                    {showError?.lastName &&
-                        <span className='text-danger'> {showError?.lastName}</span>
-                    }
-                </div></div>
-
-            <div class="form-group m-2">
-                <label for="exampleFormControlInput1">Date of Birth  </label>
-                <input type="date" class={"form-control " + (showError?.dob && "border-danger")} name='dob' value={formData?.dob} placeholder="Date of Birth " onChange={onInputChange} />
-                {showError?.dob &&
-                    <span className='text-danger'> {showError?.dob}</span>
-                }
             </div>
+            <div className='card-body'>
 
-            <div className='d-flex'>
-                <div class="form-group w-50 m-2">
-                    <label for="exampleFormControlInput1">Salary </label>
-                    <input type="Number" class={"form-control " + (showError?.salary && "border-danger")} name='salary' value={formData?.salary} placeholder="Salary" onChange={onInputChange} />
-                    {showError?.salary &&
-                        <span className='text-danger'> {showError?.salary}</span>
-                    }
-                </div>
-                <div class="form-group  w-50 m-2">
-                    <label for="exampleFormControlInput1">Department </label>
-                    <select class={"form-select " + (showError?.department && "border-danger")} name='department' onChange={onInputChange} >
-                        <option disabled>Select </option>
-                        {getAllDepartmentReducer?.map((department) => {
-                            return <option selected={formData?.department == department.department ? 'selected' : ''} value={department.department} > {department.department}</option>
-                        })
-                        }
-                    </select>
-                    {showError?.department &&
-                        <span className='text-danger'> {showError?.department}</span>
-                    }
-                </div></div>
+
+                <Formik
+                    initialValues={formik.initialValues}
+                    enableReinitialize={true}
+                    validateOnChange={false}
+                    validateOnBlur={false}
+                    onSubmit={values => formik.handleSubmit(values)}>
+
+                    {props => (
+
+                        <form onSubmit={props.handleSubmit}>
+                            <div className='d-flex justify-content-between'>
+                                <h2 className="content-header-title float-start mb-0">Employee Details</h2>
+                                <div className='d-flex'>
+
+                                    <button type='submit' className='btn btn-primary btn-sm m-2 '> {id ? "Update" : "Save"}</button>
+
+                                    <Link to={'/'} className='btn btn-danger btn-sm  m-2 '>Back</Link>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div className='d-flex'>
+                                    <div class="form-group w-50 m-2">
+                                        <label for="exampleFormControlInput1">First Name </label>
+
+                                        <input className='form-control'
+                                            id="firstName"
+                                            name="firstName"
+                                            type="text"
+                                            class="form-control"
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            value={formik.values.firstName}
+                                        />
+                                        {formik.touched.firstName && formik.errors.firstName ? (
+                                            <span className="text-danger">{formik.errors.firstName}</span>
+                                        ) : null}
+
+                                    </div>
+                                    <div class="form-group  w-50 m-2">
+                                        <label for="exampleFormControlInput1">Last Name </label>
+                                        <input className='form-control'
+                                            id="lastName"
+                                            name="lastName"
+                                            type="text"
+                                            class="form-control"
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            value={formik.values.lastName}
+                                        />
+                                        {formik.touched.lastName && formik.errors.lastName ? (
+                                            <span className="text-danger">{formik.errors.lastName}</span>
+                                        ) : null}
+                                    </div>
+                                </div>
+
+                                <div class="form-group m-2">
+                                    <label for="exampleFormControlInput1">Date of Birth </label>
+                                    <input className='form-control'
+                                        id="dob"
+                                        name="dob"
+                                        type="date"
+                                        class="form-control"
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                        value={formik.values.dob}
+                                    />
+                                    {formik.touched.dob && formik.errors.dob ? (
+                                        <span className="text-danger">{formik.errors.dob}</span>
+                                    ) : null}
+                                </div>
+
+                                <div className='d-flex'>
+                                    <div class="form-group w-50 m-2">
+                                        <label for="exampleFormControlInput1">Salary</label>
+                                        <input className='form-control'
+                                            id="salary"
+                                            name="salary"
+                                            type="number"
+                                            min={0}
+                                            class="form-control"
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            value={formik.values.salary}
+                                        />
+                                        {formik.touched.salary && formik.errors.salary ? (
+                                            <span className="text-danger">{formik.errors.salary}</span>
+                                        ) : null}
+                                    </div>
+                                    <div class="form-group  w-50 m-2">
+                                        <label for="exampleFormControlInput1">Department </label>
+                                        <select
+                                            class="form-select "
+                                            name='department'
+                                            onChange={formik.handleChange}
+                                        >
+                                            <option disabled selected='selected'>Select </option>
+                                            {getAllDepartmentReducer?.map
+                                                ((department) => {
+                                                    return <option value={department.department} selected={formik?.values?.department == department.department ? 'selected' : ''}>
+                                                        {department.department}
+                                                    </option>
+                                                })
+                                            }
+                                        </select>
+
+                                        {formik.touched.department && formik.errors.department ? (
+                                            <span className="text-danger">{formik.errors.department}</span>
+                                        ) : null}
+
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    )}
+                </Formik>
+            </div >
         </div>
     </div >
 

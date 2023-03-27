@@ -44,7 +44,7 @@ export const updateEmployeeReducer = (state = {}, action) => {
 export const RemoveEmployeeReducer = (state = {}, action) => {
     switch (action.type) {
         case Constants.REMOVE_EMPLOYEE_SUCESS: {
-            
+
             return { ...state, EmployeeList: action.data, Loading: false }
         }
         default:
@@ -56,7 +56,7 @@ export const RemoveEmployeeReducer = (state = {}, action) => {
 export const getAllDepartmentReducer = (state = {}, action) => {
     switch (action.type) {
         case Constants.GET_ALL_DEPARTMENT_SUCESS: {
-            return { ...state, DepartmentList: action.data, Loading: false }
+            return { ...state, DepartmentList: action.data || [], Loading: false }
         }
         default:
             return { ...state }
