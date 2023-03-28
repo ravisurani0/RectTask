@@ -122,7 +122,7 @@ function DepartmentComponent({
 
 
     return <div className='container' >
-        <div className='card my-3 shadow'>
+        <div className='card mt-5 shadow'>
             <div className='card-header'>
                 <div className='btn-group w-100 ' >
                     <Link to={'/'} className='btn btn-primary  ' >Employee</Link>

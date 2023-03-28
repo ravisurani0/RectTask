@@ -22,12 +22,13 @@ function EmployeeComponent({
     const [tableData, setTableData] = useState([])
 
     const TableColumns = [
-        { Header: "First Name", accessor: '' },
-        { Header: "Last Name", accessor: '' },
-        { Header: "DOB", accessor: '' },
-        { Header: "Salary", accessor: '' },
-        { Header: "Department", accessor: '' },
-        { Header: "Action", accessor: '' },
+        { Header: "Id", accessor: 'id' },
+        { Header: "First Name", accessor: 'firstName' },
+        { Header: "Last Name", accessor: 'lastName' },
+        { Header: "DOB", accessor: 'dob' },
+        { Header: "Salary", accessor: 'salary' },
+        { Header: "Department", accessor: 'department' },
+        { Header: "Action", accessor: 'action' },
     ];
 
     useEffect(() => {
@@ -36,32 +37,64 @@ function EmployeeComponent({
 
     useEffect(() => {
         if (getAllEmployeeProps) {
-            debugger
-            setTableData()
-            setFilteredEmployeeList(getAllEmployeeProps)
+
+            setTableData(getAllEmployeeProps.map(record => {
+                return {
+                    id: record.id,
+                    firstName: record.firstName,
+                    lastName: record.lastName,
+                    dob: record.dob,
+                    salary: record.salary,
+                    department: record.department,
+                    action: <div className='btn-group btn-group-sm'>
+                        <Link to={'/employeedetails/' + record?.id} className='btn btn-primary' >Change</Link>
+                        <button className='btn btn-danger' onClick={() => { onRemoveEmployee(record?.id) }}>Rmove </button >
+                    </div>
+                }
+            })
+            )
         }
     }, [getAllEmployeeProps,])
 
 
     const onSearchFilter = (event) => {
-        setFilteredEmployeeList(
-            getAllEmployeeProps.filter(employee => employee.firstName.toLowerCase().includes(event.target.value)
+
+
+        let tempList = []
+        getAllEmployeeProps.forEach(employee => {
+            if (employee.firstName.toLowerCase().includes(event.target.value)
                 || employee.lastName.toLowerCase().includes(event.target.value)
-                || employee.department.toLowerCase().includes(event.target.value))
-        )
+                || employee.department.toLowerCase().includes(event.target.value)) {
+                tempList.push({
+                    id: employee.id,
+                    firstName: employee.firstName,
+                    lastName: employee.lastName,
+                    dob: employee.dob,
+                    salary: employee.salary,
+                    department: employee.department,
+                    action: <div className='btn-group btn-group-sm'>
+                        <Link to={'/employeedetails/' + employee?.id} className='btn btn-primary' >Change</Link>
+                        <button className='btn btn-danger' onClick={() => { onRemoveEmployee(employee?.id) }}>Rmove </button >
+                    </div>
+
+                })
+            }
+        })
+
+        setTableData(tempList)
     }
 
     function onRemoveEmployee(employee) {
         removeEmployeeAction(employee);
     }
 
-    console.log(filteredEmployeeList)
+    console.log(tableData)
 
 
 
 
     return <div className='container' >
-        <div className='card my-3 shadow'>
+        <div className='card  mt-5 shadow'>
             <div className='card-header'>
 
                 <div className='btn-group w-100 ' >
@@ -80,44 +113,6 @@ function EmployeeComponent({
                 </div>
 
                 <DataTable columns={TableColumns} tableData={tableData} />
-
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">EmployeeFirstName</th>
-                            <th scope="col">EmployeeLastName</th>
-                            <th scope="col">EmployeeDOB</th>
-                            <th scope="col">EmployeeSalary</th>
-                            <th scope="col">Department</th>
-                            <th scope="col">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-
-                        {filteredEmployeeList?.length ? filteredEmployeeList.map((employee, index) => <tr key={employee?.id}>
-
-                            <td>{employee?.id}</td>
-                            <td>{employee?.firstName}</td>
-                            <td>{employee?.lastName}</td>
-                            <td>{employee?.dob}</td>
-                            <td>{employee?.salary}</td>
-                            <td>{employee?.department}</td>
-
-                            <td >
-
-                            </td>
-                        </tr>
-                        )
-                            :
-                            <tr>
-                                <td colSpan={7} className="text-center">No Data Found</td>
-                            </tr>
-
-                        }
-
-                    </tbody>
-                </table>
             </div>
         </div>
     </div >
