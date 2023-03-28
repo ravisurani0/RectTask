@@ -92,6 +92,7 @@ function DepartmentComponent({
     const onSearchFilter = (event) => {
         let tempList = []
         getAllDepartmentReducer.forEach(record => {
+            
             if (record.department.toLowerCase().includes(event.target.value) || record.details.toLowerCase().includes(event.target.value)) {
                 tempList.push({
                     id: record.id,
@@ -99,7 +100,7 @@ function DepartmentComponent({
                     details: record.details,
                     aciton: <div className='btn-group'>
                         <button type="button" className="btn btn-primary btn-sm" onClick={() => onUpdateDepartment(record)}>Edit</button>
-                        <button type="button" className="btn btn-danger btn-sm" onClick={() => onRemoveDepartment(record)}>Remove</button>
+                        <button type="button" className="btn btn-danger btn-sm" onClick={() => onRemoveDepartment(record)} >Remove</button>
                     </div>
                 })
             }
@@ -199,7 +200,7 @@ function DepartmentComponent({
                                             {formik.values.details?.id ?
                                                 <button className='btn btn-primary btn-sm' onClick={() => { }}>Update </button >
                                                 : <button type='submit' className='btn btn-primary btn-sm' >Save </button >}
-                                            <button className='btn btn-danger btn-sm' onClick={() => { setIsOpen(false) }}>Cancle</button >
+                                            <button className='btn btn-danger btn-sm' onClick={() => { setIsOpen(false) }}>Cancel</button >
                                         </div>
                                     </div>
                                 </div>
