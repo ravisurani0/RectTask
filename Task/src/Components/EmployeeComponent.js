@@ -88,11 +88,6 @@ function EmployeeComponent({
         removeEmployeeAction(employee);
     }
 
-    console.log(tableData)
-
-
-
-
     return <div className='container' >
         <div className='card  mt-5 shadow'>
             <div className='card-header'>
