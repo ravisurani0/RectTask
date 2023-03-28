@@ -19,6 +19,7 @@ const addNewEmployee = (details) => {
     return (Dispatch) => {
         let EmployeeList = JSON.parse(localStorage.getItem('Employee'))
         if (EmployeeList) {
+            details.id = EmployeeList.length + 1;
             EmployeeList.push(details)
         }
         else {
